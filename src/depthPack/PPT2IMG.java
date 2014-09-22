@@ -52,7 +52,3 @@ import java.awt.geom.Rectangle2D;
 /*    */   }
 /*    */ }
 
-/* Location:           C:\Web_java\eclipse\open_cv_workspace\CV_PROJECT_DEPTH\CV_PROJECT_DEPTH\bin\
- * Qualified Name:     depthPack.PPT2IMG
- * JD-Core Version:    0.6.0
- */

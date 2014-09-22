@@ -10,16 +10,17 @@
 /*     */ import java.awt.image.BufferStrategy;
 /*     */ import java.awt.image.BufferedImage;
 /*     */ import java.io.File;
-/*     */ import java.io.PrintStream;
 /*     */ import java.util.LinkedList;
 /*     */ import javax.swing.JFrame;
+
+import depthPack.GUI.StatePair;
+import depthPack.GUI.markNslide;
 /*     */ 
 /*     */ public class GUI
 /*     */ {
 /*     */   private JFrame frame;
 /*     */   private Canvas canvas;
 /*     */   private BufferStrategy bs;
-/*     */   private BufferStrategy bs1;
 /*  28 */   private static int ImpMarkWidth = 0;
 /*  29 */   private static int ImpMarkHeight = 0;
 /*     */ 
@@ -37,13 +38,11 @@
 /*  42 */   private static int preHandY = 0;
 /*     */   private static Toolkit tk;
 /*     */   private static Image hand;
-/*     */   private static Image off;
 /*     */   private static Image ImpMark;
 /*     */   private static int ImageWidth;
 /*     */   private static int ImageHeight;
 /*     */   private static final int BGWidth = 1440;
 /*     */   private static final int BGHeight = 1080;
-/*     */   private static int HandNUM;
 /*  50 */   private static int SlideCount = 1;
 /*  51 */   private static int MovingFrameCount = 0;
 /*     */ 
@@ -55,20 +54,8 @@
 /*  58 */   private static boolean isMarked = false;
 /*     */ 
 /*  60 */   private static int WaitingFrameCount = 0;
-/*  61 */   private static int frameCount = 0;
 /*     */   private static final int MAX_MOVING_CNT = 3;
 /*     */   private static final int MAX_WF_CNT = 4;
-/*     */   private static final int HAND_STATE_0 = 0;
-/*     */   private static final int HAND_STATE_1 = 1;
-/*     */   private static final int HAND_STATE_2 = 2;
-/*     */   private static final int HAND_STATE_3 = 3;
-/*     */   private static final int HAND_STATE_4 = 4;
-/*     */   private static final int HAND_STATE_5 = 5;
-/*     */   private static final int HAND_STATE_6 = 6;
-/*     */   private static final int HAND_STATE_7 = 7;
-/*     */   private static final int HAND_STATE_8 = 8;
-/*     */   private static final int HAND_STATE_9 = 9;
-/*     */   private static final int HAND_STATE_10 = 10;
 /*     */   private static final int MOVING_STATE_Stay = -1;
 /*     */   private static final int MOVING_STATE_Right = 0;
 /*     */   private static final int MOVING_STATE_Left = 1;
@@ -87,10 +74,10 @@
 /*     */   {
 /* 121 */     this.frame = new JFrame("Canvas");
 /* 122 */     this.frame.setDefaultCloseOperation(3);
-/* 123 */     this.frame.setPreferredSize(new Dimension(1440, 1080));
+/* 123 */     this.frame.setPreferredSize(new Dimension(BGWidth, BGHeight));
 /* 124 */     this.canvas = new Canvas();
 /* 125 */     this.canvas.setBackground(Color.white);
-/* 126 */     this.canvas.setSize(1440, 1080);
+/* 126 */     this.canvas.setSize(BGWidth, BGHeight);
 /* 127 */     this.frame.add(this.canvas);
 /*     */ 
 /* 129 */     this.canvas.createBufferStrategy(1);
@@ -109,9 +96,9 @@
 /* 142 */     ImpMarkHeight = ImpMark.getHeight(this.canvas);
 /* 143 */     ImpMarkWidth = ImpMark.getWidth(this.canvas);
 /*     */ 
-/* 145 */     impMarkPts = new LinkedList();
+/* 145 */     impMarkPts = new LinkedList<markNslide>();
 /*     */ 
-/* 147 */     StateList = new LinkedList();
+/* 147 */     StateList = new LinkedList<StatePair>();
 /*     */   }
 /*     */ 
 /*     */   private Image getSlideIMG(String Slides, String type, int num)
@@ -146,18 +133,18 @@
 /*     */   private int isMovingX()
 /*     */   {
 /* 185 */     if (vec.x < -15)
-/* 186 */       return 1;
+/* 186 */       return MOVING_STATE_Left;
 /* 187 */     if (vec.x > 15) {
-/* 188 */       return 0;
+/* 188 */       return MOVING_STATE_Right;
 /*     */     }
 /* 190 */     return -1;
 /*     */   }
 /*     */ 
 /*     */   private int isMovingY() {
 /* 194 */     if (vec.y < -10)
-/* 195 */       return 3;
+/* 195 */       return MOVING_STATE_Down;
 /* 196 */     if (vec.y > 10) {
-/* 197 */       return 2;
+/* 197 */       return MOVING_STATE_Up;
 /*     */     }
 /* 199 */     return -1;
 /*     */   }
@@ -169,17 +156,17 @@
 /*     */ 
 /*     */   public void countMoving()
 /*     */   {
-/* 211 */     if (StateList.size() == 3) {
+/* 211 */     if (StateList.size() == MAX_MOVING_CNT ) {
 /* 212 */       StateList.pop();
 /*     */     }
 /* 214 */     StateList.push(new StatePair(currentHandState, currentMovingXState));
-/* 215 */     if (currentMovingXState == 0) {
+/* 215 */     if (currentMovingXState == MOVING_STATE_Right) {
 /* 216 */       if (currentMovingXState == previousMovingXState)
 /* 217 */         MovingFrameCount += 1;
 /*     */       else
 /* 219 */         MovingFrameCount = 0;
 /*     */     }
-/* 221 */     else if (currentMovingXState == 1) {
+/* 221 */     else if (currentMovingXState == MOVING_STATE_Left) {
 /* 222 */       if (currentMovingXState == previousMovingXState)
 /* 223 */         MovingFrameCount -= 1;
 /*     */       else
@@ -249,14 +236,14 @@
 /*     */     }
 /*     */ 
 /* 297 */     if ((!isDrawing) && 
-/* 298 */       (WaitingFrameCount++ == 4)) {
+/* 298 */       (WaitingFrameCount++ ==MAX_WF_CNT)) {
 /* 299 */       isWaiting = false;
 /* 300 */       WaitingFrameCount = 0;
 /*     */ 
 /* 302 */       if (currentHandState == 0) {
 /* 303 */         boolean pass = false;
 /* 304 */         double prob = getStateProb(StateList, 0, 
-/* 305 */           0);
+/* 305 */           MOVING_STATE_Right);
 /*     */ 
 /* 307 */         if (2.0D < prob)
 /*     */         {
@@ -269,7 +256,7 @@
 /*     */ 
 /* 316 */         if (!pass) {
 /* 317 */           prob = getStateProb(StateList, 0, 
-/* 318 */             1);
+/* 318 */             MOVING_STATE_Left);
 /*     */ 
 /* 320 */           if (2.0D < prob)
 /*     */           {
@@ -284,7 +271,7 @@
 /* 330 */         MovingFrameCount = 0;
 /* 331 */       } else if (currentHandState == 4) {
 /* 332 */         double prob = getStateProb(StateList, 4, 
-/* 333 */           -1);
+/* 333 */           MOVING_STATE_Stay);
 /*     */ 
 /* 335 */         if (2.0D < prob) {
 /* 336 */           isImportant = true;
@@ -308,7 +295,7 @@
 /* 356 */       if ((pair.Hand == handNum) && (dir == pair.Move)) {
 /* 357 */         prob += 1.0D;
 /*     */       }
-/* 361 */       else if ((pair.Hand == handNum) && (pair.Move == -1)) {
+/* 361 */       else if ((pair.Hand == handNum) && (pair.Move == MOVING_STATE_Stay)) {
 /* 362 */         prob += 0.5D;
 /*     */       }
 /* 366 */       else if ((pair.Hand != handNum) && (dir == pair.Move)) {
@@ -326,8 +313,8 @@
 /*     */   public void setHandPosition(int x, int y) {
 /* 380 */     preHandX = curHandX;
 /* 381 */     preHandY = curHandY;
-/* 382 */     curHandX = (int)(x * 1440.0D / 320.0D);
-/* 383 */     curHandY = (int)(y * 1080.0D / 240.0D);
+/* 382 */     curHandX = (int)(x * BGWidth / 320.0D);
+/* 383 */     curHandY = (int)(y * BGHeight / 240.0D);
 /*     */ 
 /* 385 */     setHandMovingDir();
 /* 386 */     previousMovingXState = currentMovingXState;
@@ -339,8 +326,8 @@
 /* 392 */     if (isDrawing) {
 /* 393 */       preDrawX = curDrawX;
 /* 394 */       preDrawY = curDrawY;
-/* 395 */       curDrawX = (int)(x * 1440.0D / 320.0D);
-/* 396 */       curDrawY = (int)(y * 1080.0D / 240.0D);
+/* 395 */       curDrawX = (int)(x * BGWidth / 320.0D);
+/* 396 */       curDrawY = (int)(y * BGHeight / 240.0D);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -349,27 +336,27 @@
 /* 406 */     String x = new String(); String y = new String();
 /*     */ 
 /* 408 */     switch (isMovingX()) {
-/*     */     case -1:
+/*     */     case MOVING_STATE_Stay:
 /* 410 */       x = "stay";
 /* 411 */       break;
-/*     */     case 0:
+/*     */     case MOVING_STATE_Right:
 /* 413 */       x = "Right";
 /* 414 */       break;
-/*     */     case 1:
+/*     */     case MOVING_STATE_Left:
 /* 416 */       x = "Left";
+				break;
 /*     */     }
 /*     */ 
 /* 419 */     switch (isMovingY()) {
-/*     */     case -1:
+/*     */     case MOVING_STATE_Stay:
 /* 421 */       y = "stay";
 /* 422 */       break;
-/*     */     case 2:
+/*     */     case MOVING_STATE_Up:
 /* 424 */       y = "Up";
 /* 425 */       break;
-/*     */     case 3:
+/*     */     case MOVING_STATE_Down:
 /* 427 */       y = "Down";
-/*     */     case 0:
-/*     */     case 1:
+/*     */      	break;
 /*     */     }
 /*     */ 
 /* 432 */     return "(" + currentHandState + "," + MovingFrameCount + "," + x + "," + 
@@ -378,7 +365,7 @@
 /*     */ 
 /*     */   public void paint()
 /*     */   {
-/* 439 */     BufferedImage img = new BufferedImage(1440, 1080, 
+/* 439 */     BufferedImage img = new BufferedImage(BGWidth, BGHeight, 
 /* 440 */       5);
 /*     */ 
 /* 442 */     Graphics g = this.bs.getDrawGraphics();
@@ -388,7 +375,7 @@
 /* 446 */     Image slide = getSlideIMG("Final","png", SlideCount);
 /* 447 */     Image impMark = tk.getImage("ImportantMark.png");
 /* 448 */     for (int j = 0; j < term; j++) {
-/* 449 */       G.fillRect(0, 0, 1440, 1080);
+/* 449 */       G.fillRect(0, 0, BGWidth, BGHeight);
 /*     */ 
 /* 451 */       G.drawImage(slide, 0, 0, this.canvas);
 /* 452 */       G.setColor(Color.white);
@@ -452,30 +439,26 @@
 /*     */     }
 /*     */   }
 /*     */ 
-/*     */   class StatePair
-/*     */   {
-/*     */     int Hand;
-/*     */     int Move;
-/*     */ 
-/*     */     public StatePair(int hand, int move)
-/*     */     {
-/* 102 */       this.Hand = hand;
-/* 103 */       this.Move = move;
-/*     */     }
-/*     */   }
-/*     */ 
-/*     */   class markNslide {
-/*     */     int slideNum;
-/*     */     Point pt;
-/*     */ 
-/*     */     public markNslide(int num, Point ipt) {
-/* 114 */       this.slideNum = num;
-/* 115 */       this.pt = ipt;
-/*     */     }
-/*     */   }
-/*     */ }
+  class StatePair
+  {
+    int Hand;
+     int Move;
 
-/* Location:           C:\Web_java\eclipse\open_cv_workspace\CV_PROJECT_DEPTH\CV_PROJECT_DEPTH\bin\
- * Qualified Name:     depthPack.GUI
- * JD-Core Version:    0.6.0
- */
+     public StatePair(int hand, int move)
+     {
+       this.Hand = hand;
+       this.Move = move;
+     }
+   }
+ 
+  class markNslide {
+    int slideNum;
+     Point pt;
+ 
+     public markNslide(int num, Point ipt) {
+      this.slideNum = num;
+      this.pt = ipt;
+    }
+  }
+ }
+

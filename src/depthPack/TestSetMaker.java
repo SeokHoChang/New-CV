@@ -169,7 +169,3 @@
 /*     */   }
 /*     */ }
 
-/* Location:           C:\Web_java\eclipse\open_cv_workspace\CV_PROJECT_DEPTH\CV_PROJECT_DEPTH\bin\
- * Qualified Name:     depthPack.TestSetMaker
- * JD-Core Version:    0.6.0
- */
